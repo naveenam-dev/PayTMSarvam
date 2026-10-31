@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sahay AI · Human Console — TeamApex</title>
+<style>
+  /* Paytm-inspired theme: navy #002970 + sky #00BAF2 on a soft grey-blue page, white rounded cards, pill buttons */
+  :root {
+    --navy: #002970; --navy-2: #0a3a8c; --sky: #00baf2; --sky-2: #00a6d9; --sky-bg: #e5f7fe; --sky-bg2: #cdeffc;
+    --bg: #f5f7fa; --card: #ffffff; --line: #e6ebf2; --line-2: #d5dde8;
+    --ink: #101828; --ink2: #475467; --muted: #8a94a6;
+    --good: #12805c; --good-bg: #e3f6ee; --warn: #a15c00; --warn-bg: #fff3dc;
+    --crit: #c0262d; --crit-bg: #fdeceb; --info: #0071a8; --info-bg: #e5f7fe;
+    --shadow: 0 1px 2px rgba(16,24,40,.04), 0 4px 16px rgba(0,41,112,.06);
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.5 Inter, "Segoe UI", system-ui, -apple-system, sans-serif; color: var(--ink); background: var(--bg); }
+
+  /* ---------- top bar (white, like paytm.com) ---------- */
+  header { position: sticky; top: 0; z-index: 5; background: #fff; display: flex; align-items: center; gap: 12px;
+           padding: 10px 28px; box-shadow: 0 2px 10px rgba(0,41,112,.08); }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo { width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, var(--sky), var(--navy));
+          color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 18px; }
+  header h1 { font-size: 20px; margin: 0; font-weight: 800; color: var(--navy); letter-spacing: -.02em; }
+  header h1 span { color: var(--sky); }
+  header h1 small { font-size: 14px; font-weight: 600; color: var(--ink2); margin-left: 6px; letter-spacing: 0; }
+  header .sub { color: var(--muted); font-size: 12px; }
+  header .spacer { flex: 1; }
+  .badge { font-size: 12px; padding: 5px 12px; border-radius: 999px; background: var(--bg); color: var(--navy); font-weight: 500; white-space: nowrap; }
+  .badge.prov { cursor: pointer; border: 1px solid var(--line); }
+  .badge.prov:hover { border-color: var(--sky); }
+  .badge.on::before { content: "● "; color: #19b37b; }
+  .badge.off::before { content: "○ "; color: var(--muted); }
+
+  /* ---------- buttons ---------- */
+  button { font: inherit; font-weight: 600; border: 1.5px solid var(--navy); background: #fff; color: var(--navy);
+           padding: 7px 16px; border-radius: 999px; cursor: pointer; transition: background .15s, color .15s, border-color .15s; white-space: nowrap; }
+  button:hover { background: var(--sky-bg); }
+  button:disabled { opacity: .45; cursor: not-allowed; background: #fff; }
+  button.primary { background: var(--navy); border-color: var(--navy); color: #fff; }
+  button.primary:hover { background: var(--navy-2); }
+  button.call { background: var(--sky); border-color: var(--sky); color: #fff; }
+  button.call:hover { background: var(--sky-2); border-color: var(--sky-2); }
+  button.good { background: var(--navy); border-color: var(--navy); color: #fff; }
+  button.good:hover { background: var(--navy-2); }
+  button.bad { background: #fff; border-color: var(--crit); color: var(--crit); }
+  button.bad:hover { background: var(--crit-bg); }
+  button.ghost { border-color: transparent; color: var(--ink2); }
+  button.ghost:hover { background: var(--bg); }
+  button.rec { border-color: var(--crit); color: var(--crit); background: var(--crit-bg); }
+  .arrow::after { content: " →"; }
+  .speak { border: none; background: none; padding: 0 2px; cursor: pointer; font-size: 13px; }
+  .speak:hover { background: none; }
+
+  /* ---------- KPI tiles ---------- */
+  .kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; padding: 18px 28px 0; }
+  .kpi { background: var(--card); border-radius: var(--radius); padding: 14px 18px; box-shadow: var(--shadow); }
+  .kpi:first-child { background: linear-gradient(135deg, var(--sky-bg2), var(--sky-bg)); }
+  .kpi .v { font-size: 24px; font-weight: 800; color: var(--navy); letter-spacing: -.02em; }
+  .kpi .l { font-size: 12px; color: var(--ink2); font-weight: 500; }
+
+  /* ---------- layout & cards ---------- */
+  main { display: grid; grid-template-columns: 330px 1fr 390px; gap: 14px; padding: 14px 28px 20px; height: calc(100vh - 160px); }
+  .col { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+  .card { background: var(--card); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); }
+  .card h2 { font-size: 16px; font-weight: 700; color: var(--ink); margin: 0 0 10px; letter-spacing: -.01em; }
+  .scroll { overflow: auto; min-height: 0; flex: 1; }
+  .scen { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; text-align: left;
+          margin-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--ink); border: 1px solid var(--line);
+          border-radius: 12px; padding: 8px 12px; white-space: normal; }
+  .scen::after { content: "→"; color: var(--sky); font-weight: 700; }
+  #scenarios { max-height: 30vh; overflow: auto; padding-right: 4px; }
+  #callbtn { width: 100%; padding: 10px 16px; font-size: 15px; margin-top: 2px; }
+  .col > .card:first-child { flex-shrink: 0; }
+  .col > .card.scroll { min-height: 160px; }
+  .scen:hover { background: var(--sky-bg); border-color: var(--sky); }
+  select, textarea, input { font: inherit; width: 100%; border: 1px solid var(--line-2); border-radius: 12px; padding: 8px 12px; background: #fff; color: var(--ink); }
+  select:focus, textarea:focus, input:focus { outline: none; border-color: var(--sky); box-shadow: 0 0 0 3px rgba(0,186,242,.15); }
+  textarea { resize: vertical; min-height: 60px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  /* ---------- voice agent panel (light-blue promo style) ---------- */
+  #callpanel { display: none; margin-top: 12px; border-radius: 14px; padding: 12px 14px; background: linear-gradient(135deg, var(--sky-bg2), var(--sky-bg)); }
+  #callpanel .ctop { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+  #callstate { font-weight: 700; font-size: 14px; color: var(--navy); }
+  #callstate.listening { color: var(--good); } #callstate.thinking { color: var(--info); } #callstate.speaking { color: var(--navy); }
+  .meter { height: 6px; background: rgba(255,255,255,.8); border-radius: 3px; overflow: hidden; margin: 10px 0; }
+  .meter div { height: 100%; width: 0; background: var(--sky); transition: width 60ms linear; }
+  #calllog { max-height: 180px; overflow: auto; font-size: 12px; background: rgba(255,255,255,.7); border-radius: 10px; padding: 4px 10px; }
+  #calllog:empty { display: none; }
+  #calllog .u { color: var(--ink); margin: 6px 0; } #calllog .a { color: var(--navy); margin: 6px 0; }
+  #calllog b { font-weight: 700; }
+
+  /* ---------- cases ---------- */
+  .caseitem { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: border-color .15s, background .15s; }
+  .caseitem:hover { border-color: var(--sky); }
+  .caseitem.sel { border-color: var(--sky); background: var(--sky-bg); }
+  .caseitem .t { font-weight: 700; font-size: 13px; color: var(--navy); }
+  .caseitem .s { font-size: 12px; color: var(--ink2); }
+  .pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+  .p-RESOLVED { background: var(--good-bg); color: var(--good); }
+  .p-AWAITING_FOLLOWUP { background: var(--info-bg); color: var(--info); }
+  .p-ESCALATED { background: var(--warn-bg); color: var(--warn); }
+  .p-REJECTED { background: var(--crit-bg); color: var(--crit); }
+  .p-NEEDS_INFO { background: var(--bg); color: var(--ink2); }
+  .p-other { background: var(--bg); color: var(--ink2); }
+  .casehead { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .casehead .id { font-size: 18px; font-weight: 800; color: var(--navy); }
+  .meta { color: var(--ink2); font-size: 12px; }
+  .meta b { color: var(--navy); }
+
+  /* ---------- conversation & reasoning ---------- */
+  .split { display: grid; grid-template-columns: 1fr 1.25fr; gap: 14px; flex: 1; min-height: 0; }
+  .chat { display: flex; flex-direction: column; gap: 10px; }
+  .bubble { max-width: 92%; padding: 10px 12px; border-radius: 14px; font-size: 13px; }
+  .bubble.customer { align-self: flex-end; background: var(--navy); color: #fff; border-bottom-right-radius: 4px; }
+  .bubble.customer .who { color: #b9c8e6; }
+  .bubble.sahay { align-self: flex-start; background: var(--sky-bg); color: var(--ink); border-bottom-left-radius: 4px; }
+  .bubble .who { font-size: 11px; color: var(--muted); margin-bottom: 3px; font-weight: 500; }
+  .step { border-left: 3px solid var(--line); padding: 4px 0 10px 12px; position: relative; }
+  .step::before { content: ""; position: absolute; left: -6px; top: 8px; width: 9px; height: 9px; border-radius: 50%; background: #fff; border: 2px solid var(--line-2); }
+  .step .a { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--sky-2); }
+  .step .h { font-weight: 700; font-size: 13px; color: var(--ink); }
+  .step .d { font-size: 12px; color: var(--ink2); word-break: break-word; white-space: pre-line; }
+  .step.tool { border-left-color: var(--sky-bg2); } .step.tool::before { border-color: var(--sky); }
+  .step.tool .h { font-family: "Cascadia Code", Consolas, monospace; font-size: 12px; color: var(--navy); }
+  .step.decision { border-left-color: var(--navy); } .step.decision::before { border-color: var(--navy); background: var(--navy); }
+  .step.ok { border-left-color: var(--good); } .step.ok::before { border-color: var(--good); background: var(--good); }
+  .step.warn { border-left-color: var(--warn); } .step.warn::before { border-color: var(--warn); background: var(--warn); }
+  .step.action { border-left-color: var(--sky); } .step.action::before { border-color: var(--sky); background: var(--sky); }
+  .icon { font-weight: 700; margin-right: 4px; }
+
+  /* ---------- escalation briefs ---------- */
+  .brief { border: 1px solid var(--line); border-top: 4px solid var(--warn); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+  .brief h3 { margin: 0 0 4px; font-size: 15px; color: var(--navy); }
+  .brief dl { margin: 8px 0; font-size: 12px; }
+  .brief dt { font-weight: 700; color: var(--ink2); margin-top: 8px; }
+  .brief dd { margin: 0; }
+  .brief ul { margin: 2px 0 0 16px; padding: 0; }
+  .aisum { background: linear-gradient(135deg, var(--sky-bg2), var(--sky-bg)); border-radius: 10px; padding: 8px 10px; font-size: 12px; margin-top: 8px; color: var(--ink); }
+  .aisum b { color: var(--navy); }
+
+  .empty { color: var(--muted); font-size: 13px; padding: 8px 0; }
+  table.sim { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.sim td { padding: 7px 2px; border-bottom: 1px solid var(--line); }
+  table.sim td:last-child { text-align: right; font-weight: 800; color: var(--navy); }
+  .note { font-size: 11px; color: var(--muted); margin-top: 8px; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--navy); color: #fff;
+           padding: 10px 18px; border-radius: 999px; display: none; box-shadow: 0 8px 24px rgba(0,41,112,.25); max-width: 80vw; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">S</div>
+    <div>
+      <h1>Sahay<span>AI</span><small>Human Console</small></h1>
+      <div class="sub">TeamApex · Autonomous AI teammate for payment disputes</div>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <span class="badge prov" id="b-llm" onclick="testIntegrations()" title="Click to run a live check">AI: -</span>
+  <span class="badge prov" id="b-sarvam" onclick="testIntegrations()" title="Click to run a live check">Sarvam: -</span>
+  <span class="badge">Clock: <b id="clock">-</b></span>
+  <button onclick="advance()" title="Move the simulated clock forward and let Sahay run follow-ups">+24h · run follow-ups</button>
+  <button class="primary" onclick="simulate()">Run 100-dispute simulation</button>
+  <button class="ghost" onclick="resetAll()">Reset</button>
+</header>
+
+<section class="kpis" id="kpis"></section>
+
+<main>
+  <div class="col">
+    <div class="card">
+      <h2>Customer simulator</h2>
+      <div id="scenarios"></div>
+      <div style="margin-top:8px">
+        <select id="cust"></select>
+        <textarea id="msg" placeholder="Type a complaint in any language…" style="margin-top:6px"></textarea>
+        <div class="row" style="margin-top:6px"><button class="primary arrow" onclick="send()">Send</button>
+          <button id="micbtn" onclick="toggleMic()" disabled title="Needs SARVAM_API_KEY">🎤 Voice note</button>
+          <button id="callbtn" class="call" onclick="startCall()" disabled title="Needs SARVAM_API_KEY">📞 Call Sahay</button></div>
+        <div id="callpanel">
+          <div class="ctop"><span id="callstate">Connecting…</span><span class="meta" id="callwho"></span>
+            <button class="bad" onclick="endCall('You ended the call')">End call</button></div>
+          <div class="meter"><div id="meterbar"></div></div>
+          <div id="calllog"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card scroll">
+      <h2>Cases</h2>
+      <div id="cases"><div class="empty">No cases yet. Pick a scenario above.</div></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card" id="casehead"><div class="empty">Select a case to see the conversation and the agents' reasoning.</div></div>
+    <div class="split">
+      <div class="card scroll"><h2>Conversation</h2><div class="chat" id="chat"></div>
+        <div id="replybox" style="display:none;margin-top:8px">
+          <textarea id="replymsg" placeholder="Reply as customer (e.g. the txn ID)"></textarea>
+          <button class="primary" onclick="sendReply()" style="margin-top:6px">Send reply</button>
+        </div>
+      </div>
+      <div class="card scroll"><h2>Agent reasoning &amp; actions</h2><div id="timeline"></div></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card scroll" style="flex:1.4">
+      <h2>Escalation queue</h2>
+      <div id="queue"><div class="empty">Nothing needs a human right now.</div></div>
+    </div>
+    <div class="card scroll" style="flex:1">
+      <h2>Simulation results</h2>
+      <div id="sim"><div class="empty">Run the 100-dispute simulation to measure auto-resolution, escalation precision and cost.</div></div>
+    </div>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const S = { cases: {}, sel: null, scenarios: [], customers: [] };
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const STATUS_LABEL = { RESOLVED: "✓ Resolved", AWAITING_FOLLOWUP: "⏱ Awaiting follow-up", ESCALATED: "⚠ Escalated",
+  REJECTED: "✕ Rejected", NEEDS_INFO: "? Needs info", UNDERSTANDING: "… Understanding", INVESTIGATING: "… Investigating",
+  CHECKING_POLICY: "… Policy check", ACTING: "… Acting", NEW: "New" };
+const KIND_ICON = { tool: "⚙", decision: "◆", ok: "✓", warn: "⚠", action: "➜", info: "•" };
+const pill = st => `<span class="pill p-${STATUS_LABEL[st] && ["RESOLVED","AWAITING_FOLLOWUP","ESCALATED","REJECTED","NEEDS_INFO"].includes(st) ? st : "other"}">${STATUS_LABEL[st] || st}</span>`;
+
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body) });
+  return r.json();
+}
+let toastT;
+function toast(t, ms = 2500) { const el = $("toast"); el.textContent = t; el.style.display = "block"; clearTimeout(toastT); toastT = setTimeout(() => el.style.display = "none", ms); }
+
+async function load() {
+  const st = await api("/api/state");
+  S.scenarios = st.scenarios; S.customers = st.customers; S.cases = {};
+  st.cases.forEach(c => S.cases[c.case_id] = c);
+  if (!S.sel && st.cases.length) S.sel = st.cases.find(c => c.status === "ESCALATED")?.case_id || st.cases[st.cases.length - 1].case_id;
+  setIntegrations(st.integrations);
+  $("clock").textContent = fmt(st.clock);
+  $("scenarios").innerHTML = S.scenarios.map((s, i) => `<button class="scen" onclick="runScenario(${i})">${esc(s.label)}</button>`).join("");
+  $("cust").innerHTML = S.customers.map(c => `<option value="${c.customer_id}">${esc(c.name)} · ${c.customer_id}</option>`).join("");
+  kpis(st.metrics); render();
+}
+function setIntegrations(i) {
+  S.integrations = i;
+  const b1 = $("b-llm"), b2 = $("b-sarvam");
+  b1.textContent = "AI: " + i.llm.mode; b1.className = "badge prov " + (i.llm.enabled ? "on" : "off");
+  b2.textContent = "Sarvam: " + (i.sarvam.enabled ? `${i.sarvam.stt} · ${i.sarvam.tts}` : "off");
+  b2.className = "badge prov " + (i.sarvam.enabled ? "on" : "off");
+  const mic = $("micbtn"); mic.disabled = !i.sarvam.enabled;
+  $("callbtn").disabled = !i.sarvam.enabled || (typeof CALL !== "undefined" && CALL.active);
+  mic.title = i.sarvam.enabled ? "Record a voice complaint (Sarvam speech-to-text)" : "Needs SARVAM_API_KEY";
+}
+async function testIntegrations() {
+  toast("Checking Gemini and Sarvam…", 20000);
+  const r = await api("/api/integrations/test");
+  const f = (n, x) => `${n}: ${x.ok ? "OK" : "not working"}${x.error ? " (" + x.error + ")" : ""}`;
+  toast(f("AI", r.llm) + " · " + f("Sarvam", r.sarvam), 8000);
+}
+let rec = null, chunks = [];
+async function toggleMic() {
+  const btn = $("micbtn");
+  if (rec && rec.state === "recording") { rec.stop(); return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch (e) { toast("Microphone not available: " + e.message); return; }
+  chunks = []; rec = new MediaRecorder(stream);
+  rec.ondataavailable = e => chunks.push(e.data);
+  rec.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop());
+    btn.textContent = "🎤 Voice note"; btn.classList.remove("rec");
+    const type = rec.mimeType || "audio/webm";
+    const blob = new Blob(chunks, { type });
+    const fd = new FormData(); fd.append("customer_id", $("cust").value);
+    fd.append("audio", blob, "voice." + (type.includes("ogg") ? "ogg" : type.includes("mp4") ? "mp4" : "webm"));
+    toast("Transcribing with Sarvam…", 20000); S.awaiting = true;
+    const r = await fetch("/api/voice", { method: "POST", body: fd });
+    const j = await r.json();
+    if (!r.ok) { S.awaiting = false; toast(j.detail || "Voice failed", 8000); }
+    else toast(`Heard (${j.language_code || "?"}): ${j.transcript}`, 5000);
+  };
+  rec.start(); btn.textContent = "■ Stop (max 25 s)"; btn.classList.add("rec");
+  setTimeout(() => rec && rec.state === "recording" && rec.stop(), 25000);
+}
+async function speak(caseId, idx) {
+  const c = S.cases[caseId], m = c.messages[idx];
+  toast("Generating speech with Sarvam…", 15000);
+  const r = await fetch("/api/tts", { method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ text: m.text, lang: c.language || "en" }) });
+  const j = await r.json();
+  if (!r.ok) return toast(j.detail || "Text-to-speech failed", 8000);
+  toast("Playing", 1000);
+  new Audio("data:audio/wav;base64," + j.audio_b64).play();
+}
+// ------------------------------------------------------------ voice agent (📞 Call Sahay)
+let CALL = { active: false };
+function callState(t, cls) { $("callstate").textContent = t; $("callstate").className = cls || ""; }
+function callLog(who, text) {
+  const el = document.createElement("div"); el.className = who === "you" ? "u" : "a";
+  el.innerHTML = `<b>${who === "you" ? "Customer" : "Sahay"}:</b> ${esc(text)}`;
+  $("calllog").appendChild(el); $("calllog").scrollTop = 1e9;
+}
+function playB64(b64) {
+  return new Promise(res => {
+    if (!b64 || !CALL.active) return res();
+    const a = new Audio("data:audio/wav;base64," + b64); CALL.audio = a;
+    a.onended = a.onerror = () => res(); a.play().catch(() => res());
+  });
+}
+async function startCall() {
+  if (CALL.active) return;
+  const cid = $("cust").value, cname = $("cust").selectedOptions[0].textContent;
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+  catch (e) { return toast("Microphone not available: " + e.message, 6000); }
+  CALL = { active: true, cid, caseId: "", lang: "en", stream, ctx: new AudioContext() };
+  $("callpanel").style.display = "block"; $("calllog").innerHTML = ""; $("callwho").textContent = cname;
+  $("callbtn").disabled = true; callState("Connecting…");
+  const r = await fetch("/api/call/start", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ customer_id: cid }) });
+  const j = await r.json();
+  if (!r.ok) { endCall(j.detail || "Could not start call"); return; }
+  CALL.lang = j.lang; CALL.filler = j.filler_audio_b64;
+  callLog("sahay", j.text); callState("Speaking…", "speaking");
+  await playB64(j.audio_b64);
+  callLoop();
+}
+async function callLoop() {
+  let misses = 0;
+  while (CALL.active) {
+    callState("Listening… speak now", "listening");
+    const blob = await listenTurn();
+    if (!CALL.active) break;
+    if (!blob) {
+      if (++misses >= 2) { endCall("No speech heard — call ended"); break; }
+      callState("Didn't catch that, listening again…", "listening"); continue;
+    }
+    misses = 0;
+    callState("Thinking…", "thinking");
+    let fillerDone = Promise.resolve(), replied = false;
+    // Filler only for real complaints; short answers ("no", "haan", "thanks") get a quick reply anyway.
+    const fillerTimer = blob.speechMs < 2000 ? null : setTimeout(() => { if (!replied) { callState("Checking your transaction…", "thinking"); fillerDone = playB64(CALL.filler); } }, 900);
+    const fd = new FormData();
+    fd.append("customer_id", CALL.cid); fd.append("lang", CALL.lang); fd.append("case_id", CALL.caseId);
+    fd.append("audio", blob, "turn.webm");
+    S.awaiting = true;
+    let j;
+    try { const r = await fetch("/api/call/turn", { method: "POST", body: fd }); j = await r.json(); if (!r.ok) throw new Error(j.detail); }
+    catch (e) { replied = true; clearTimeout(fillerTimer); endCall("Call failed: " + e.message); break; }
+    replied = true; clearTimeout(fillerTimer);
+    await fillerDone;
+    if (!CALL.active) break;
+    if (j.heard) callLog("you", j.heard);
+    callLog("sahay", j.say);
+    if (j.case_id) { CALL.caseId = j.case_id; S.sel = j.case_id; S.awaiting = false; render(); }
+    CALL.lang = j.lang || CALL.lang;
+    callState("Speaking…", "speaking");
+    for (const a of j.audio_b64s || []) await playB64(a);
+    if (j.end_call) { endCall("Call ended"); break; }
+  }
+}
+// Records one utterance; stops after ~1.2 s of silence. Resolves null if nobody spoke.
+function listenTurn() {
+  return new Promise(resolve => {
+    const { ctx, stream } = CALL;
+    const src = ctx.createMediaStreamSource(stream), an = ctx.createAnalyser(); an.fftSize = 1024; src.connect(an);
+    const buf = new Float32Array(an.fftSize), rec = new MediaRecorder(stream), chunks = [];
+    rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+    const t0 = performance.now(); let floor = 0, n = 0, speaking = false, last = t0, firstVoice = 0;
+    rec.onstop = () => { clearInterval(iv); src.disconnect(); $("meterbar").style.width = "0";
+      if (!speaking || !CALL.active) return resolve(null);
+      const blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" });
+      blob.speechMs = last - firstVoice;
+      resolve(blob); };
+    CALL.rec = rec; rec.start(100);
+    const iv = setInterval(() => {
+      if (!CALL.active) return rec.state === "recording" && rec.stop();
+      an.getFloatTimeDomainData(buf);
+      let sum = 0; for (const v of buf) sum += v * v; const rms = Math.sqrt(sum / buf.length), now = performance.now();
+      $("meterbar").style.width = Math.min(100, rms * 600) + "%";
+      if (now - t0 < 300) { floor += rms; n++; return; }             // calibrate background noise
+      const thresh = Math.max(0.015, (floor / Math.max(n, 1)) * 3);
+      if (rms > thresh) { if (!speaking) firstVoice = now; speaking = true; last = now; }
+      if ((speaking && now - last > 1200) || (!speaking && now - t0 > 8000) || now - t0 > 20000) rec.stop();
+    }, 50);
+  });
+}
+function endCall(msg) {
+  if (!CALL.active) return;
+  CALL.active = false;
+  if (CALL.audio) CALL.audio.pause();
+  if (CALL.rec && CALL.rec.state === "recording") CALL.rec.stop();
+  CALL.stream && CALL.stream.getTracks().forEach(t => t.stop());
+  CALL.ctx && CALL.ctx.close();
+  callState(msg || "Call ended"); $("meterbar").style.width = "0";
+  $("callbtn").disabled = !(S.integrations?.sarvam?.enabled);
+}
+function fmt(iso) { if (!iso) return "-"; const d = new Date(iso); return d.toLocaleString("en-IN", {day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit"}); }
+
+function kpis(m) {
+  const items = [["Cases", m.cases], ["Auto-resolved by AI", m.auto_resolved + ` (${m.auto_resolution_rate}%)`],
+    ["Escalated to human", m.escalated + ` (${m.escalation_rate}%)`], ["Asked customer for info", m.needs_info],
+    ["Avg agent handle time", m.avg_handle_ms == null ? "-" : m.avg_handle_ms < 1000 ? m.avg_handle_ms + " ms" : (m.avg_handle_ms / 1000).toFixed(1) + " s"],
+    ["Est. cost per ticket", m.cases ? m.cost_per_ticket_change_pct + "%" : "-"]];
+  $("kpis").innerHTML = items.map(([l, v]) => `<div class="kpi"><div class="v">${esc(v)}</div><div class="l">${l}</div></div>`).join("");
+}
+
+function render() {
+  const list = Object.values(S.cases).sort((a, b) => b.case_id.localeCompare(a.case_id));
+  const cust = id => (S.customers.find(c => c.customer_id === id) || {}).name || id;
+  $("cases").innerHTML = list.length ? list.map(c => `<div class="caseitem ${c.case_id === S.sel ? "sel" : ""}" onclick="select('${c.case_id}')">
+      <div class="row" style="justify-content:space-between"><span class="t">${c.case_id}</span>${pill(c.status)}</div>
+      <div class="s">${esc(cust(c.customer_id))} · ${c.amount ? "₹" + Number(c.amount).toLocaleString("en-IN") : ""} ${c.root_cause ? "· " + c.root_cause.replaceAll("_", " ").toLowerCase() : ""}</div></div>`).join("")
+    : `<div class="empty">No cases yet. Pick a scenario above.</div>`;
+
+  const q = list.filter(c => c.status === "ESCALATED");
+  $("queue").innerHTML = q.length ? q.map(briefHtml).join("") : `<div class="empty">Nothing needs a human right now.</div>`;
+
+  const c = S.cases[S.sel];
+  if (!c) return;
+  $("casehead").innerHTML = `<div class="casehead"><span class="id">${c.case_id}</span>${pill(c.status)}
+      <span class="meta">${esc(cust(c.customer_id))} · ${c.language?.toUpperCase() || ""} · txn ${c.txn_id || "-"} ·
+      root cause <b>${c.root_cause || "-"}</b> · confidence ${c.confidence ? c.confidence.toFixed(2) : "-"} ·
+      ${c.resolved_by ? "resolved by " + c.resolved_by : ""} ${c.followup_at && c.status === "AWAITING_FOLLOWUP" ? "· follow-up " + fmt(c.followup_at) : ""}</span></div>`;
+  const canSpeak = S.integrations?.sarvam?.enabled;
+  $("chat").innerHTML = c.messages.map((m, i) => `<div class="bubble ${m.from}"><div class="who">${m.from === "sahay" ? "Sahay AI" : (m.channel === "voice" ? "Customer · 🎤 voice" : m.channel === "call" ? "Customer · 📞 call" : "Customer")} · ${fmt(m.ts)}
+      ${m.from === "sahay" && canSpeak ? `<button class="speak" title="Play with Sarvam text-to-speech" onclick="speak('${c.case_id}', ${i})">🔊</button>` : ""}</div>${esc(m.text)}</div>`).join("");
+  $("timeline").innerHTML = c.timeline.map(s => `<div class="step ${s.kind}"><div class="a">${esc(s.agent)}</div>
+      <div class="h"><span class="icon">${KIND_ICON[s.kind] || "•"}</span>${esc(s.title)}</div><div class="d">${esc(s.detail)}</div></div>`).join("");
+  $("replybox").style.display = c.status === "NEEDS_INFO" ? "block" : "none";
+}
+
+function briefHtml(c) {
+  const b = c.brief;
+  return `<div class="brief"><h3>${esc(b.headline)}</h3>
+    <div class="meta">${c.case_id} · ${b.ticket} · queue: ${esc(b.queue)} · confidence ${b.confidence}</div>
+    ${b.ai_summary ? `<div class="aisum"><b>AI summary:</b> ${esc(b.ai_summary)}</div>` : ""}
+    <dl><dt>Customer</dt><dd>${esc(b.customer)}</dd>
+    <dt>Transaction</dt><dd>${esc(b.transaction)}</dd>
+    <dt>Root cause</dt><dd>${esc(b.root_cause)}</dd>
+    <dt>Proposed action</dt><dd>${esc(b.proposed_action)}</dd>
+    <dt>Why a human is needed</dt><dd><ul>${b.why_human.map(w => `<li>${esc(w)}</li>`).join("") || "<li>Follow-up did not complete</li>"}</ul></dd>
+    <dt>Evidence</dt><dd><ul>${b.evidence.map(w => `<li>${esc(w)}</li>`).join("")}</ul></dd>
+    <dt>Recommendation</dt><dd><b>${esc(b.recommendation)}</b></dd></dl>
+    <input id="note-${c.case_id}" placeholder="Decision note (optional)">
+    <div class="row" style="margin-top:6px">
+      <button class="good" onclick="decide('${c.case_id}', true)">Approve &amp; execute</button>
+      <button class="bad" onclick="decide('${c.case_id}', false)">Reject</button>
+      <button class="ghost" onclick="select('${c.case_id}')">Open</button></div></div>`;
+}
+
+function select(id) { S.sel = id; render(); }
+async function runScenario(i) { const s = S.scenarios[i]; $("cust").value = s.customer_id; $("msg").value = s.message; await send(); }
+async function send() {
+  const message = $("msg").value.trim(); if (!message) return;
+  S.awaiting = true; await api("/api/cases", { customer_id: $("cust").value, message }); $("msg").value = "";
+}
+async function sendReply() { const t = $("replymsg").value.trim(); if (!t) return; await api(`/api/cases/${S.sel}/reply`, { text: t }); $("replymsg").value = ""; }
+async function decide(id, approve) { const note = $("note-" + id).value; await api(`/api/cases/${id}/decision`, { approve, note, officer: "Disputes officer" }); S.sel = id; }
+async function advance() { const r = await api("/api/clock/advance", { hours: 24 }); toast(r.log.length ? r.log.join(" · ") : "Clock +24h. No pending operations matured."); }
+async function resetAll() { await api("/api/reset", {}); S.sel = null; $("sim").innerHTML = ""; await load(); $("casehead").innerHTML = `<div class="empty">Select a case.</div>`; $("chat").innerHTML = $("timeline").innerHTML = ""; }
+async function simulate() {
+  $("sim").innerHTML = `<div class="empty">Running 100 synthetic disputes…</div>`;
+  const m = await api("/api/simulate", { n: 100 });
+  const rows = [["Disputes simulated", m.cases], ["Auto-resolution rate", m.auto_resolution_rate + "%"],
+    ["Closed by AI after follow-up", m.closed_by_ai_after_followup_rate + "%"], ["Escalation rate", m.escalation_rate + "%"],
+    ["Escalation precision", m.escalation_precision + "%"], ["Escalation recall", m.escalation_recall + "%"],
+    ["Root-cause accuracy", m.root_cause_accuracy + "%"], ["Asked customer for txn ID", m.needs_info],
+    ["Avg agent handle time", m.avg_handle_ms + " ms"], ["Est. change in cost per ticket", m.cost_per_ticket_change_pct + "%"]];
+  $("sim").innerHTML = `<table class="sim">${rows.map(([k, v]) => `<tr><td>${k}</td><td>${esc(v)}</td></tr>`).join("")}</table>
+    <div class="note">Missed escalations: ${m.missed_escalations.length} · unnecessary escalations: ${m.false_escalations.length}.
+    Cost assumes ₹${m.assumptions.human_cost_per_ticket_inr}/human ticket, ₹${m.assumptions.ai_cost_per_ticket_inr}/AI ticket. ${esc(m.assumptions.note)}</div>`;
+}
+
+function connect() {
+  const ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws");
+  ws.onmessage = e => {
+    const ev = JSON.parse(e.data);
+    if (ev.clock) $("clock").textContent = fmt(ev.clock);
+    if (ev.metrics) kpis(ev.metrics);
+    if (ev.integrations) setIntegrations(ev.integrations);
+    if (ev.type === "reset") return load();
+    if (ev.type === "case") {
+      const isNew = !S.cases[ev.case.case_id];
+      S.cases[ev.case.case_id] = ev.case;
+      if (isNew && S.awaiting) { S.sel = ev.case.case_id; S.awaiting = false; }
+    }
+    render();
+  };
+  ws.onclose = () => setTimeout(connect, 1000);
+}
+load().then(connect);
+</script>
+</body>
+</html>
